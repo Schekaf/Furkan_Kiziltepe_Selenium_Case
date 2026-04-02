@@ -7,6 +7,5 @@ class HomePage(BasePage):
         return self.driver.find_element(By.TAG_NAME, "body").is_displayed()
 
     def has_main_blocks(self):
-        # Adjust selectors if needed
         blocks = self.driver.find_elements(By.CSS_SELECTOR, "section")
         return len(blocks) > 0
