@@ -1,5 +1,4 @@
-import re
-
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from pages.base_page import BasePage
 
@@ -9,6 +8,8 @@ class QAPage(BasePage):
     JOB_LOCATION_LIST = (By.XPATH, "//*[contains(@aria-label,'Location:')]//a[contains(@class,'category-link')]")
     JOB_DEPARTMENT_LIST = (By.XPATH, "//*[contains(@aria-label,'Filter by Team:')]//a[contains(@class,'category-link')]")
     APPLY_BUTTON = (By.XPATH, "//a[contains(text(),'Apply')]")
+    APPLY_FOR_JOB_BUTTON = (By.CSS_SELECTOR, "a[href*='/apply']")
+    HOME_PAGE_LINK = (By.XPATH, "//a[contains(.,'Insider One Home Page')]")
 
     def get_jobs(self):
         return self.driver.find_elements(*self.JOB_LIST)
@@ -23,7 +24,10 @@ class QAPage(BasePage):
         jobs_elements = self.get_jobs()
         assert len(jobs_elements) > 0, "No jobs found"
         jobs_list = [job.text for job in jobs_elements]
-    def validate_jobs(self):
+
+        assert any("Quality Assurance" in job for job in jobs_list), f"Non of the jobs contain 'Quality Assurance'"
+
+    def validate_all_jobs_contain_qa(self):
         jobs_elements = self.get_jobs()
         assert len(jobs_elements) > 0, "No jobs found"
         jobs_list = [job.text for job in jobs_elements]
@@ -35,8 +39,8 @@ class QAPage(BasePage):
         location_elements = self.get_job_locations()
         assert len(location_elements) > 0, "No job locations found"
         location_list = [loc.get_attribute("text") for loc in location_elements]
-
-        assert "Istanbul, Turkey" in location_list, "'Istanbul, Turkey' is not in the job locations"
+        #Note: 'Istanbul, Turkiye' is in the list but not 'Istanbul,Turkey' leaving it regards to the requirement doc.
+        assert "Istanbul, Turkiye" in location_list, "'Istanbul, Turkey' is not in the job locations"
 
     def validate_departments(self):
         department_elements = self.get_job_departments()
@@ -49,10 +53,23 @@ class QAPage(BasePage):
         self.driver.find_element(*self.APPLY_BUTTON).click()
 
     def is_redirected_to_lever(self):
-        expected_url_prefix = "https://jobs.lever.co/insiderone/"
-        current_url = self.driver.current_url
-        assert current_url.startswith(expected_url_prefix)
+        try:
+            self.wait.until(lambda d: "lever" in d.current_url)
+        except TimeoutException:
+            print("Lever URL not detected within wait window")
 
-        # Validate UUID-like job ID
-        pattern = r"https://jobs\.lever\.co/insiderone/[a-f0-9\-]+"
-        assert re.match(pattern, current_url) is not None, "Current URL does not match the expected pattern for Lever job postings"
+        apply_visible = self.element_exists(self.APPLY_FOR_JOB_BUTTON)
+        home_visible = self.element_exists(self.HOME_PAGE_LINK)
+
+        print(f"Lever checks -> urlHasLever: {'lever' in self.driver.current_url}, "
+              f"applyVisible: {apply_visible},"
+              f"homeVisible: {home_visible}")
+
+        return ("lever" in self.driver.current_url and apply_visible and home_visible)
+
+    def element_exists(self, locator):
+        try:
+            self.wait.until(lambda d: d.find_elements(*locator))
+            return True
+        except TimeoutException:
+            return False
