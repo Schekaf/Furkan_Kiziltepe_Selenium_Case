@@ -1,4 +1,3 @@
-# InsiderOne-Selenium
 # Pytest Selenium Framework for Web Automation
 
 ## Overview
