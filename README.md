@@ -23,7 +23,7 @@ This repository contains a robust framework for automating web applications usin
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/Schekaf/InsiderOne-Selenium.git
+   git clone https://github.com/Schekaf/Furkan_Kiziltepe_Selenium_Case.git
    
 2. Install requirements:
     ```bash
